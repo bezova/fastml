@@ -1,23 +1,11 @@
-from sklearn_pandas import DataFrameMapper, gen_features
+from sklearn_pandas import DataFrameMapper
 from sklearn.preprocessing import LabelEncoder, Imputer, StandardScaler, MinMaxScaler
 import warnings
 from sklearn.exceptions import DataConversionWarning
 from pandas.api.types import is_string_dtype, is_numeric_dtype
-from sklearn.base import BaseEstimator, TransformerMixin
+
 import pandas as pd
 import numpy as np
-
-# MinMaxScaler takes only 2D arrays. to make it 1D
-class Make2D(BaseEstimator, TransformerMixin):
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        return X.reshape(-1,1)
-    
-# x=np.array([0.77778, 0.11111, 0.66667])
-# cc=MinMaxScaler1D().fit(x)
-# print(cc.transform(x), cc.inverse_transform(cc.transform(x)))
 
 def scale_vars(df, mapper=None, columns=None, inplace=True):
     '''from fastai.structured.py
@@ -33,30 +21,24 @@ def scale_vars(df, mapper=None, columns=None, inplace=True):
     return mapper
 
 
-def encode_cat(df, mapper=None, columns=None, minmax_encoded=False, inplace=True):
+def encode_cat(df, mapper=None, columns=None, inplace=True):
     '''maps categorical vars to numbers, returns mapper
     to apply to test data: _ = scale_vars(test, scale_mapper)
     # direct transform:   mapper.transform(df)
     # inverse transform: encode_dict = {n[0]: e for n, e in mapper.features}
     encode_dict['RSProppantType'].inverse_transform([0,1,2])
-    encode_dict['RSProppantType'].classes_ gives ordered classes list same as in inversetransform
-    or if MinMax applyed
-    codes=encode_dict['RSSubPlay'][1].inverse_transform([1,0.1,0.2]).round().flatten().astype(int)
-    encode_dict['RSSubPlay'][0].inverse_transform(codes)'''
+    encode_dict['RSProppantType'].classes_ gives ordered classes list same as in inversetransform'''
 
     warnings.filterwarnings('ignore', category=DataConversionWarning)
     cols = df.columns if columns is None else columns
-    cols = [n for n in cols if not is_numeric_dtype(df[n])]
-
     if mapper is None:
-        if minmax_encoded:
-            map_f = gen_features(cols, [LabelEncoder, Make2D, MinMaxScaler])
-        else:
-            map_f = gen_features(cols, [LabelEncoder])
+        #map_f = [([n], LabelEncoder()) for n in cols if not is_numeric_dtype(df[n])]
+        map_f = [(n, LabelEncoder()) for n in cols if not is_numeric_dtype(df[n])]
         mapper = DataFrameMapper(map_f, input_df=True, df_out=True).fit(df)
     if inplace: 
         df[mapper.transformed_names_] = mapper.transform(df)
     return mapper
+
 
 def train_cat_var_types(df, cat_vars, cont_vars):
     '''assign 'float32' and 'category' types to columns, 
@@ -134,7 +116,7 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
                 scale=True, scalecols=None,
                 onehot=False, onehotecols=None, 
                 labelencode=True, encodecols=None,
-                minmax_encoded=True):
+                minmax_labelencoded=True):
     '''
     assigns categorical and numerical columns by cat_vars, cont_vars
     scales if scale all numerical columns given [scalecols]
@@ -164,8 +146,17 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
         df=pd.get_dummies(df, columns=onehotecols)          
 
     # encode categoricals from [encodecols] colunmns (all categorical if encodecols=None)    
-    # if minmax_encoded applay MinMaxScaler to encoded columns
-    if labelencode: cat_mapper = encode_cat(df, columns=encodecols, minmax_encoded=minmax_encoded)
+    # encode only cols with more then min_cat categories. other will be dummy encoded
+    #if min_cat: encodecols = [n for n, cats in cat_dict.items() if len(cats)>2]    
+    if labelencode:  cat_mapper = encode_cat(df, columns=encodecols)
+        if minmax_labelencoded:
+            minmaxcols = cat_mapper.transformed_names_
+
+    # to apply to test data: _ = encode_cat(test, mapper=cat_mapper)
+    ## direct transform:   mapper.transform(df)
+    ## inverse transform: encode_dict = {n[0]: e for n, e in mapper.features}
+    # encode_dict['RSProppantType'].inverse_transform([0,1,2])
+    # encode_dict['RSProppantType'].classes_ gives ordered classes list same as in inversetransform
 
     return df, cat_dict, scale_mapper, onehotecols, cat_mapper
 
