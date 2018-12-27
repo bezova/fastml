@@ -134,7 +134,7 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
                 scale=True, scalecols=None,
                 onehot=False, onehotecols=None, 
                 labelencode=True, encodecols=None,
-                minmax_encoded=True):
+                minmax_encoded=False):
     '''
     assigns categorical and numerical columns by cat_vars, cont_vars
     scales if scale all numerical columns given [scalecols]
