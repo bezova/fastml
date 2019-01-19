@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import warnings
 from sklearn.exceptions import DataConversionWarning
 #import xgboost as xgb
-
+pd.options.mode.chained_assignment = None  # default='warn'
 
 def drop_inf(df):
     '''removes np.inf values'''
@@ -17,20 +17,18 @@ def exp_rmspe(y_pred, targ):
     pct_var = (targ - np.exp(y_pred))/targ
     return np.sqrt((pct_var**2).mean())
 
-def exp_mape(y_pred, targ):
-    targ = np.exp(targ)
-    pct_var = (targ - np.exp(y_pred))/targ
-    return np.abs(pct_var).mean()
-
 def mape(y_pred, targ):
     pct_var = (targ - y_pred)/targ
-    return pct_var.abs().mean()
+    return np.abs(pct_var).mean()
 
 def exp_pe(pred, targ):
     targ  = np.exp(targ)
     pct_var = (np.exp(pred)-targ)/targ
     #pct_var = drop_inf(pct_var)
     return pct_var
+
+def exp_mape(y_pred, targ):
+    return np.abs(exp_pe(y_pred, targ)).mean()
 
 #def metric_r2(rf, xt, yt, xgboost=False):
 def metric_r2(rf, xt, yt):
@@ -83,3 +81,16 @@ def plot_tree_importance(cols, tree, vert_plot=True):
         fi.plot.bar(figsize=(14,4))
         plt.ylabel('Relative Importance')
         plt.title('Tree: Variable Importance')
+
+def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
+    xy_min = min(x.max(), y.max())
+    if not ax:
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.set_aspect('equal')
+    ax.scatter(x, y, s=8, c='k', alpha=0.5)
+    ax.plot([0, xy_min],[0, xy_min], 'r')
+    ax.plot([0,xy_min*(1+pp)],[0,xy_min*(1+pp)*(1-pp)], ls='--', c='b')
+    ax.plot([0,xy_min*(1-pp)],[0,xy_min*(1-pp)*(1+pp)], ls='--', c='b')
+    if ax_names: 
+        ax.set_xlabel(ax_names[0]);  ax.set_ylabel(ax_names[1])
+    plt.show()

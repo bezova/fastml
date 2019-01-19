@@ -6,6 +6,8 @@ from pandas.api.types import is_string_dtype, is_numeric_dtype
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 import numpy as np
+pd.options.mode.chained_assignment = None  # default='warn'
+
 
 # MinMaxScaler takes only 2D arrays. to make it 1D
 class Make2D(BaseEstimator, TransformerMixin):
@@ -18,6 +20,13 @@ class Make2D(BaseEstimator, TransformerMixin):
 # x=np.array([0.77778, 0.11111, 0.66667])
 # cc=MinMaxScaler1D().fit(x)
 # print(cc.transform(x), cc.inverse_transform(cc.transform(x)))
+
+def rename_rare(df, cols, thr=0.01, dropna=True):
+    '''rename rare values in categorical cols to RARE'''
+    for col in  df[cols].columns[df[cols].dtypes == "object"]: 
+        d = df[col].value_counts(dropna=dropna)/len(df)
+        df[col] = df[col].apply(lambda x: 'RARE' if d.loc[x] <= thr else x)  
+
 
 def scale_vars(df, mapper=None, columns=None, inplace=True):
     '''from fastai.structured.py
@@ -112,8 +121,9 @@ def split_by_val_idx(idxs, *a):
     mask[np.array(idxs)] = True
     return [(o[mask],o[~mask]) for o in a]
 
-def get_cv_idxs(n, cv_idx=0, val_pct=0.2, seed=42):
-    """ Get a list of index values for Validation set from a dataset
+def val_train_idxs(n, val_pct=0.2, seed=42):
+#def get_cv_idxs(n, cv_idx=0, val_pct=0.2, seed=42):
+    """ Get a list of index values for Validation and Traning set from a dataset
     
     Arguments:
         n : int, Total number of elements in the data set.
@@ -122,13 +132,16 @@ def get_cv_idxs(n, cv_idx=0, val_pct=0.2, seed=42):
         seed : seed value for RandomState
         
     Returns:
-        list of indexes 
+        list of indexes val_inx, trn_inx 
     """
     np.random.seed(seed)
     n_val = int(val_pct*n)
-    idx_start = cv_idx*n_val
+    #idx_start = cv_idx*n_val
     idxs = np.random.permutation(n)
-    return idxs[idx_start:idx_start+n_val]
+    #return idxs[idx_start:idx_start+n_val], idxs[idx_start+n_val,:]
+    val = idxs[:n_val]
+    trn = idxs[n_val:]
+    return val, trn
 
 def prepare_trn(df, cat_vars, cont_vars, sample_size=None, 
                 scale=True, scalecols=None,
@@ -146,7 +159,7 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
     scale_mapper = None
     cat_mapper = None
 
-    if sample_size is not None: df.sample(sample_size)
+    if sample_size is not None: df = df.sample(sample_size).copy()
     else: df = df.copy()    
     
     #take [cat_vars+cont_vars] and convert cat_vars -> categorical cont_vars->'float32'
