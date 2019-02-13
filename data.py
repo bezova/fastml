@@ -27,7 +27,6 @@ def rename_rare(df, cols, thr=0.01, dropna=True):
         d = df[col].value_counts(dropna=dropna)/len(df)
         df[col] = df[col].apply(lambda x: 'RARE' if d.loc[x] <= thr else x)  
 
-
 def scale_vars(df, mapper=None, columns=None, inplace=True):
     '''from fastai.structured.py
     scales inplace all numeric cols or columns, returns mapper'''
@@ -40,7 +39,6 @@ def scale_vars(df, mapper=None, columns=None, inplace=True):
     if inplace: 
         df[mapper.transformed_names_] = mapper.transform(df)
     return mapper
-
 
 def encode_cat(df, mapper=None, columns=None, minmax_encoded=False, inplace=True):
     '''maps categorical vars to numbers, returns mapper
@@ -77,6 +75,7 @@ def train_cat_var_types(df, cat_vars, cont_vars):
     return df, cat_dict
 
 def test_apply_cats(df, cat_dict, cont_vars):
+    #TODO: rtename to not confuce with pytest
     '''set categorical and continues vars using given dict'''
     cat_vars = list(cat_dict.keys())
     df = df[cat_vars+cont_vars]
