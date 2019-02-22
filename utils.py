@@ -12,8 +12,8 @@ def drop_inf(df):
     '''removes np.inf values'''
     return df.replace([np.inf, -np.inf], np.nan).dropna()
 
-def exp_rmspe(y_pred, targ):
-    targ = np.exp(targ)
+def exp_rmspe(y_pred, targ0):
+    targ = np.exp(targ0)
     pct_var = (targ - np.exp(y_pred))/targ
     return np.sqrt((pct_var**2).mean())
 
@@ -21,8 +21,8 @@ def mape(y_pred, targ):
     pct_var = (targ - y_pred)/targ
     return np.abs(pct_var).mean()
 
-def exp_pe(pred, targ):
-    targ  = np.exp(targ)
+def exp_pe(pred, targ0):
+    targ  = np.exp(targ0)
     pct_var = (np.exp(pred)-targ)/targ
     #pct_var = drop_inf(pct_var)
     return pct_var
@@ -84,7 +84,7 @@ def plot_tree_importance(cols, tree, vert_plot=True):
 
 def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     xy_min = min(x.max(), y.max())
-    if not ax:
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
         ax.set_aspect('equal')
     ax.scatter(x, y, s=8, c='k', alpha=0.5)
@@ -94,3 +94,4 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     if ax_names: 
         ax.set_xlabel(ax_names[0]);  ax.set_ylabel(ax_names[1])
     plt.show()
+    return ax

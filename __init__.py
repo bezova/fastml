@@ -2,7 +2,7 @@
 #import fastml.utils
 #from fastml import utils 
 #from .utils import pp
-#__all__ = ['utils']
+__all__ = ['utils', 'data']
 #__all__ = ['pp']
 
 from . import utils
