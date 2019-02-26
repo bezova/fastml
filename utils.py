@@ -53,21 +53,25 @@ def permutation_importances(rf, X_train, y_train, metric):
     return np.array(imp)
 
 #def plot_permutation_importances(tree, X_train, y_train, metric, vert_plot=True, xgboost=False):
-def plot_permutation_importances(tree, X_train, y_train, metric, vert_plot=True):
-    cols = X_train.columns.values
+def plot_permutation_importances(tree, X_train, y_train, metric, feature_importance=None, vert_plot=True, columns=None, ax=None):
+    cols = X_train.columns.tolist() if columns is None else columns
     # Plot feature importance
     #feature_importance = permutation_importances(tree, X_train, y_train, metric, xgboost=xgboost)
-    feature_importance = permutation_importances(tree, X_train, y_train, metric)
-    importance_df =pd.DataFrame({'Splits': feature_importance,'Feature':cols.tolist()})
+    if feature_importance is None:
+        feature_importance = permutation_importances(tree, X_train, y_train, metric)
+    importance_df =pd.DataFrame({'Splits': feature_importance,'Feature':cols})
+
 
     if not vert_plot:
+        if ax is None: fig, ax = plt.subplots(figsize=(8,15))
         importance_df.sort_values(by='Splits', inplace=True, ascending=True)
-        importance_df.plot.barh(x='Feature', figsize=(8,15))
-        plt.show()
-    else: 
+        importance_df.plot.barh(x='Feature', legend=None, ax=ax)
+    else:
+        if ax is None: fig, ax = plt.subplots(figsize=(12,3))
         importance_df.sort_values(by='Splits', inplace=True, ascending=False)
-        importance_df.plot.bar(x='Feature', figsize=(12,3))
-    plt.title('Permutation Importance')
+        importance_df.plot.bar(x='Feature', legend=None, ax=ax),
+    ax.set_title('Permutation Importance')
+    return ax
 
 def plot_tree_importance(cols, tree, vert_plot=True):
     fi = pd.DataFrame({'imp':tree.feature_importances_}, index=cols)
@@ -95,3 +99,30 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
         ax.set_xlabel(ax_names[0]);  ax.set_ylabel(ax_names[1])
     plt.show()
     return ax
+
+def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict, 
+    completion_features, location_transform, latLon=['Longitude_Mid', 'Latitude_Mid']):
+    ''' Reservoir potential
+    for wells in locations from <datain> set <completion_fetures> from <fixing_wells_compl>
+    applies <location_transform> if <completions_features> alter <location_features>
+    calculated predict(result), returns df[[latLon], ..comp_api...., mean] ##df[[latLon], ..comp_api...., mean]
+
+    EXAMPLE
+    location_features= ['Longitude_Mid', 'Latitude_Mid', 'TVD_FT', '12MonthOilRatio', 'Elevation_FT', 'OilGravity_API', 'WellPadDirection', 'RSSubPlay', 'RSInterval' ,'Formation']
+    completion_features =['FluidIntensity_BBLPerFT',  'ProppantIntensity_LBSPerFT', 'ProppantLoading_LBSPerGAL', 'Proppant_LBS', 'RSFracJobType',
+                     'RSProdWellType',  'RSProppantType', 'TotalFluidPumped_BBL', 'MD_FT', 'PerfInterval_FT', 'FirstProdYear', 'RSOperator']
+  
+    def predict_exp(df): return np.exp(model.predict(df))
+    def location_transform(df): df['MD_FT'] = df['PerfInterval_FT']+1.05*df['TVD_FT']
+    '''
+    potent_all = datain[latLon]
+    for api, fixing_well in fixing_wells_compl.iterrows():
+        data = datain.copy()
+        #set completion to all locations
+        for feat in completion_features: data[feat] = fixing_well[feat]
+        location_transform(data)
+        potent_all[f'{api}'] = predict(data)
+        
+    potent_all['mean']=potent_all.iloc[:,2:].T.mean()
+    return potent_all[latLon+['mean']]
+    #return potent_all
