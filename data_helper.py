@@ -66,7 +66,7 @@ def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['U
     nan_to_uknown(df, unknownName)
 
 def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longitude_Mid']):
-    '''condition data by geographycal fence
+    '''condition on df by geographycal fence
     gf={'lon':(-98, -97.73), 'lat': (28.83, 29.19)}
     '''
     gflat, gflon = gflatlon
