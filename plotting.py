@@ -6,6 +6,9 @@ from typing import List, Tuple, Dict, Optional
 from sklearn.neighbors import NearestNeighbors
 from data_helper import low_high_quantile
 from matplotlib import pyplot as plt
+import matplotlib.patches as patches
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 def nan_to_mean(arr:np.ndarray, axis:int=0)->np.ndarray:
     '''fills nan with mean over axis .
@@ -66,3 +69,21 @@ def mask_by_dist(df, col, xi, yi, radius=0.3, lon_lat_names:List[str]=['Longitud
     rad, index = nbrs.radius_neighbors(Xtest, radius=radius, return_distance=True)
     mask = np.array([(True if len(x)>0 else False) for x in rad]).reshape((ny,nx))
     return mask
+
+def fence_draw(gf, ax, latlon=['lat', 'lon'], **args):
+    ''' takes fennce coord 
+    E.G. geo_fence={'lon':(-98, -97.73), 'lat': (28.83, 29.19)}
+    adds patch to axes
+    '''
+    lat, lon = latlon
+    dlon = gf[lon][1]-gf[lon][0]
+    dlat = gf[lat][1]-gf[lat][0]
+    rect = patches.Rectangle((gf[lon][0],gf[lat][0]),dlon,dlat,linewidth=1,edgecolor='r',facecolor='none', **args)
+    ax.add_patch(rect)
+
+def colorbar(mappable, location='right', size="5%", pad=0.05, **args):
+    ax = mappable.axes
+    fig = ax.figure
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes(location, size=size, pad=pad)
+    return fig.colorbar(mappable, cax=cax, **args)

@@ -64,3 +64,12 @@ def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['U
     rename all unknowns (list_to_nan) and NaN categorical values to same unknownName'''
     unknown_to_nan(df, list_to_nan)
     nan_to_uknown(df, unknownName)
+
+def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longitude_Mid']):
+    '''condition data by geographycal fence
+    gf={'lon':(-98, -97.73), 'lat': (28.83, 29.19)}
+    '''
+    gflat, gflon = gflatlon
+    datlat, datlon = datalatlon
+    cond = (df[datlat]>gf[gflat][0])&(df[datlat]<gf[gflat][1])&(df[datlon]>gf[gflon][0])&(df[datlon]<gf[gflon][1])
+    return cond
