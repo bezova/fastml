@@ -6,8 +6,8 @@ from pandas.api.types import is_string_dtype, is_numeric_dtype
 from sklearn.base import BaseEstimator, TransformerMixin
 import pandas as pd
 import numpy as np
+from typing import List
 pd.options.mode.chained_assignment = None  # default='warn'
-
 
 # MinMaxScaler takes only 2D arrays. to make it 1D
 class Make2D(BaseEstimator, TransformerMixin):
@@ -210,3 +210,36 @@ def prepare_test(df, cat_dict, cont_vars, scale_mapper, onehotecols, cat_mapper,
     # because categories were set  cat_dict taken from train ensures that dummies will generate all necessary columns
     if onehotecols is not None: df=pd.get_dummies(df, columns=onehotecols)
     return df
+
+def rename_categories_F(target:str, combine:List[str], cat_idx=None):
+    '''function which will rename categories
+    catIdx is dictionary [cat] -> index'''
+    combineLst = combine if cat_idx is None else [cat_idx[cat] for cat in combine]
+    targetVal = target if cat_idx is None else cat_idx[target]
+    return (lambda x: targetVal if x in combineLst else x)
+
+def cat_to_idx(category, cat_dict):
+    '''inverse category encoding dict, returns dict(category->index)'''
+    return {name: idx for idx, name in enumerate(cat_dict[category])}
+
+def rename_cat_df(df, category, target_combine, cat_dict=None):
+    '''rename categories in df[catgory] from [combine] to target'''
+    target, combine = target_combine
+    cat_idx = None if cat_dict is None else cat_to_idx(category, cat_dict)
+    renameF = rename_categories_F(target, combine, cat_idx)
+    df = df.copy()
+    df[category] = df[category].apply(renameF)
+    return df
+
+def equal_size_cat_idx(df, column, categories, n, concat=True, cat_dict=None, random_state=None, verbose=False)->List:
+    '''index list where given categories represented equal n times (or smaller if not enougth) data points'''
+    cat_idx = None if cat_dict is None else cat_to_idx(column, cat_dict)
+    catList = categories if cat_idx is None else [cat_idx[cat] for cat in categories]
+    combined_ind = []
+    for cat in catList:
+        condition = (df[column]==cat)
+        nmax = condition.sum() # number of category values
+        if verbose: print(f'{cat_dict[column][cat]}: {nmax}->{min(n, nmax)}')
+        combined_ind.append(df[condition].sample(min(n, nmax), random_state=random_state).index)
+    if concat: return np.concatenate(combined_ind)
+    return dict(zip(categories, combined_ind))

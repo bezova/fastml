@@ -2,6 +2,7 @@ import pandas as pd
 from numpy import nan as NaN
 from sklearn.neighbors import KNeighborsRegressor
 from typing import List
+import copy
 # disable pandas chain assignment warning
 pd.options.mode.chained_assignment = None  # default='warn'
 # discussion here
@@ -26,7 +27,6 @@ def nan_quantile_ref(df:pd.DataFrame, df_ref:pd.DataFrame, col:str, low:float, h
     quantiles calculated from refereced df_ref '''
     bottom, top = low_high_quantile(df_ref[col], low, high)
     df.loc[(df[col]>=top)|(df[col]<=bottom), col] = NaN
-
 
 def knn_col_by_XY(df, col, cond_to_predict=None, LatLon=['Latitude', 'Longitude']):
     ''' In PLACE operation
@@ -73,3 +73,10 @@ def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longit
     datlat, datlon = datalatlon
     cond = (df[datlat]>gf[gflat][0])&(df[datlat]<gf[gflat][1])&(df[datlon]>gf[gflon][0])&(df[datlon]<gf[gflon][1])
     return cond
+
+def raname_dict(dictionary, category, orig, new):
+    '''rename category value in dictionary'''
+    catDict = copy.deepcopy(dictionary)
+    tt = catDict[category].values
+    tt[tt==orig]=new
+    return catDict
