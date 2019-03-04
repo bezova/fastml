@@ -85,9 +85,10 @@ def fence_draw(gf, ax, latlon=['lat', 'lon'], **args):
     rect = patches.Rectangle((gf[lon][0],gf[lat][0]),dlon,dlat,linewidth=1,edgecolor='r',facecolor='none', **args)
     ax.add_patch(rect)
 
-def colorbar(mappable, location='right', size="5%", pad=0.05, **args):
-    try: ax = mappable.axes
-    except: ax = mappable.ax # for contour plots 
+def colorbar(mappable, ax=None, location='right', size="5%", pad=0.05, **args):
+    if ax is None:
+        try: ax = mappable.axes
+        except: ax = mappable.ax # for contour plots 
     fig = ax.figure
     divider = make_axes_locatable(ax)
     cax = divider.append_axes(location, size=size, pad=pad)
@@ -111,7 +112,7 @@ def draw_rect(ax, b):
                          fill=False, edgecolor='white', lw=2))
     draw_outline(patch, 4)
 
-def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.2, ax=None, xlabel=None, 
+def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, xlabel=None, 
     ylabel='annual boe/1000ft', title='Completion Impact'):
     if ax is None: fig, ax = plt.subplots(figsize=(12,7))
     if smooth: lowess = sm.nonparametric.lowess
@@ -166,3 +167,47 @@ def plot_ice_by_category(iceLines, completions, category, cat_dict=None, point=N
     for legobj in handles: legobj.set_linewidth(5.0)
     
     return ax
+
+def plot_ice_by_continues(iceLines, completions, category, nLines=1000, point=None, 
+        point_label='', xyLabels=('',''), title='Completion Impact', random_state=42,
+            vminmax=None, figsize=(10,6), ax=None, cmapName='gist_stern'):
+    if ax is None: fig, ax = plt.subplots(figsize=figsize)
+    argsP = {'s':80, 'lw':1, 'edgecolors':'k', 'zorder':3}
+    cmap=plt.get_cmap(cmapName) #'gist_stern', 'terrain', 'brg'
+    args = {'lw':0.2, 'alpha':0.3, 'zorder':1}
+    
+    iceSample = iceLines.sample(nLines, random_state=random_state)
+    # normalize colors
+    vmin, vmax = low_high_quantile(completions[category],1./100.) if vminmax is None else vminmax
+    norm=plt.Normalize(vmin=vmin,vmax=vmax)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+
+    x = iceSample.columns
+    for index, row in iceSample.iterrows():
+        factor_ind=completions.loc[index, category]
+        plt.plot(x, row.values, c=cmap(norm(factor_ind)), **args)
+
+    ax.set(xlabel=xyLabels[0], ylabel=xyLabels[1])
+    ax.set_title(title, fontsize=14)
+    
+    if point is not None: ax.scatter(point[0], point[1], label=point_label, **argsP)
+    ax.set(xlabel=xyLabels[0], ylabel=xyLabels[1])
+    ax.set_title(title, fontsize=14)
+
+    #drop repeated legends
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+
+    leg = plt.legend(by_label.values(), by_label.keys())
+    # transparency
+    for legobj in leg.legendHandles:legobj.set_alpha(1) # OR legobj._legmarker.set_alpha(0)  
+    
+    #linewidth in legend; [-1] to skip line width for point legend 
+    handles = leg.legendHandles if point is None else leg.legendHandles[:-1]
+    for legobj in handles: legobj.set_linewidth(5.0)
+
+    # make up the array of the scalar mappable. Urgh...
+    sm._A = []
+    #     cb=plt.colorbar(sm); cb.set_label(category)
+    cbar =colorbar(sm, ax, label=category)
+    return ax, sm
