@@ -172,7 +172,7 @@ def ice_fixed_location1(fixing_well_location, fixing_wells_compl, location_featu
 
     return ice_lines(data, feature_grid, feature_name, data_transformer, predict)
 
-def pdp_map_iterCompl(fixing_wells_location, fixing_wells_compl, completion_features, feature_name, 
+def pdp_map_iterCompl1(fixing_wells_location, fixing_wells_compl, completion_features, feature_name, 
                        feature_grid, predict, location_transform, data_transformer, 
                        latlon=['Longitude_Mid', 'Latitude_Mid'], returnOut=False):
     '''  needs completion_features
@@ -197,6 +197,35 @@ def pdp_map_iterCompl(fixing_wells_location, fixing_wells_compl, completion_feat
     if returnOut: return out_pdp, out_mm, out
     else: return out_pdp, out_mm
 
+def pdp_map_iterCompl(fixing_wells_location, fixing_wells_compl, completion_features, feature_name, 
+                       predict, func_dict, feature_grid=None, gridNum=20, 
+                       latlon=['Longitude_Mid', 'Latitude_Mid'], returnOut=False):
+    '''  needs completion_features
+    # iterate over completions (faster if more locations than completions)
+     out = [[locatons] X [grdpoints] X [completions]]
+     returns pdp per location and its amplitudes
+    '''
+    location_transform, data_transformer = func_dict['location_transform'], func_dict['data_transformer']
+    if feature_grid is None: 
+        minF, maxF = min(fixing_wells_compl[feature_name]), max(fixing_wells_compl[feature_name])
+        feature_grid = np.linspace(minF, maxF, gridNum)
+
+    out = np.zeros((len(fixing_wells_location), len(feature_grid), len(fixing_wells_compl)))
+    # iterate over completions (faster if more locations than completions)
+    for compl_idx, api in enumerate(fixing_wells_compl.index):
+        data = fixing_wells_location.copy()
+        #set fixed completion to all locations
+        for feat in completion_features: data[feat] = fixing_wells_compl.loc[api, feat]
+        location_transform(data)
+        ice = ice_lines(data, feature_grid, feature_name, data_transformer, predict)
+        out[:,:, compl_idx] = ice.values
+
+    out_pdp = pd.DataFrame(out.mean(axis=2), columns=feature_grid, index=fixing_wells_location.index)
+    out_mm = fixing_wells_location[latlon]
+    out_mm['abs'] = out_pdp.max(axis=1) - out_pdp.min(axis=1)
+    out_mm['rel'] =  out_mm['abs'] / out_pdp.min(axis=1)
+    if returnOut: return out_pdp, out_mm, out
+    else: return out_pdp, out_mm
 
 def pdp_map_iterLoc(fixing_wells_location, fixing_wells_compl, location_features, feature_name, 
                     feature_grid, predict, location_transform, data_transformer, 

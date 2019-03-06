@@ -56,12 +56,12 @@ def plot_contour_map(xi:np.ndarray, yi:np.ndarray, zi:np.ndarray, mask:Optional=
     if mask is not None: zi = np.ma.masked_where(~mask, zi)
     vmin, vmax = low_high_quantile(pd.Series(zi.flatten()),1/100) if vminmax is None else vminmax
     cs = ax.contourf(xi ,yi, zi, n_conturs, vmin=vmin, vmax=vmax, antialiased=True, **argsf)
-    ax.contour(xi, yi, zi, n_conturs, linewidths=0.5, colors='k', antialiased=True, **args); #add vm
+    ax.contour(xi, yi, zi, n_conturs, linewidths=0.5, colors='k', antialiased=True, **args) #add vm
     ax.set_aspect(1)
-    return fig, ax
     if addColorbar: 
         cbar =colorbar(cs, label=colorbarLabel)
         return fig, ax, cbar
+    return fig, ax
 
 def mask_by_dist(df, col, xi, yi, radius=0.3, lon_lat_names:List[str]=['Longitude_Mid', 'Latitude_Mid']):
     nx, ny = len(xi), len(yi)
@@ -138,8 +138,7 @@ def plot_ice_by_category(iceLines, completions, category, cat_dict=None, point=N
     argsP = {'s':80, 'lw':1, 'edgecolors':'k', 'zorder':3}
     cmap=plt.get_cmap(cmapName) # other maps: 'Set1'
     args = {'lw':0.3, 'alpha':0.4, 'zorder':1}
-    
-#     lines = ice.loc[apis]#.sample(n=500, random_state=60)
+
     unique_cats=completions.loc[iceLines.index, category].unique()
     color_num = dict(zip(unique_cats, range(len(unique_cats))))    
         
