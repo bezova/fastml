@@ -80,3 +80,5 @@ def raname_dict(dictionary, category, orig, new):
     tt = catDict[category].values
     tt[tt==orig]=new
     return catDict
+
+def cut_minmax(arr, minV, maxV): return arr[(arr<=maxV)&(arr>=minV)]

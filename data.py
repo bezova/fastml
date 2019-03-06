@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from typing import List
 pd.options.mode.chained_assignment = None  # default='warn'
+from .data_helper import cut_minmax
 
 # MinMaxScaler takes only 2D arrays. to make it 1D
 class Make2D(BaseEstimator, TransformerMixin):
@@ -243,3 +244,15 @@ def equal_size_cat_idx(df, column, categories, n, concat=True, cat_dict=None, ra
         combined_ind.append(df[condition].sample(min(n, nmax), random_state=random_state).index)
     if concat: return np.concatenate(combined_ind)
     return dict(zip(categories, combined_ind))
+
+def split_ice_by_categories(ice, fixing_wells_compl, feature_name, category, sub_categories, cat_dict, n_sub=500, use_limits=True):
+    ''' use_limits will limit each category ice by the feature name valueas in this category '''
+    apisDict = equal_size_cat_idx(fixing_wells_compl, category, sub_categories, n_sub, concat=False, cat_dict=cat_dict, random_state=54, verbose=True)
+    icelines = {}
+    for cat, apiList in apisDict.items():
+        if use_limits:
+            feat_vals = fixing_wells_compl.loc[apiList, feature_name]
+            ice_columns= cut_minmax(ice.columns, feat_vals.min(),  feat_vals.max())
+            icelines[cat] = ice.loc[apiList, ice_columns]
+        else: icelines[cat] = ice.loc[apiList]
+    return icelines

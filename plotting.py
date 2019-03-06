@@ -127,7 +127,6 @@ def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, x
         lower = ice_pdp - ice_std
         ax.fill_between(ice.columns, upper, lower, alpha=0.2)#, color='r')
         ax.plot(ice.columns, ice_pdp, label=api)
-    #  ax.scatter(opDatGeo.loc[api, feature_name], opDatGeo.loc[api, targ])
     ax.legend(loc='upper left')
     ax.set(xlabel=xlabel, ylabel=ylabel)
     ax.set_title(title, fontsize=14)

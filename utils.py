@@ -128,7 +128,25 @@ def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict
     #return potent_all
 
 def ice_lines(data, feature_grid, feature_name, data_transformer, predict):
-    '' 'calculate ice linese inteating over fature through feature grid '''
+    '''calculate ice linese inteating over fature through feature grid 
+        Example of data transformer
+        def data_transformer_from_feature(feature_name):    
+        if feature_name=='FluidIntensity_BBLPerFT':
+            def data_transformer(df):
+                df['TotalFluidPumped_BBL'] = df['FluidIntensity_BBLPerFT']*df['PerfInterval_FT']
+                # keep same proppant loading
+                df['ProppantIntensity_LBSPerFT'] = df['FluidIntensity_BBLPerFT']*df['ProppantLoading_LBSPerGAL']*42
+                df['Proppant_LBS'] = df['ProppantIntensity_LBSPerFT']*df['PerfInterval_FT']
+
+        if feature_name=='ProppantIntensity_LBSPerFT':
+            def data_transformer(df):
+                df['Proppant_LBS'] = df['ProppantIntensity_LBSPerFT']*df['PerfInterval_FT']
+                # keep same proppant loading
+                df['FluidIntensity_BBLPerFT'] = df['ProppantIntensity_LBSPerFT']/df['ProppantLoading_LBSPerGAL']/42
+                df['TotalFluidPumped_BBL'] =  df['FluidIntensity_BBLPerFT']*df['PerfInterval_FT']
+
+        return data_transformer
+    '''
     ice_lines = pd.DataFrame(columns=feature_grid, index=data.index)
     # iterate over feature values
     for feature in feature_grid:
@@ -138,7 +156,7 @@ def ice_lines(data, feature_grid, feature_name, data_transformer, predict):
         ice_lines[feature] = predict(points)
     return ice_lines
 
-def ice_fixed_location(fixing_well_location, fixing_wells_compl, location_features, feature_name, 
+def ice_fixed_location1(fixing_well_location, fixing_wells_compl, location_features, feature_name, 
                         predict, location_transform, data_transformer, feature_grid=None, gridNum=40):
     ''' calculate ice linece for well fixining location 
     returned df  = [completion] x [feature_grid]
@@ -199,5 +217,106 @@ def pdp_map_iterLoc(fixing_wells_location, fixing_wells_compl, location_features
     out_mm = fixing_wells_location[latlon]
     out_mm['abs'] = out_pdp.max(axis=1) - out_pdp.min(axis=1)
     out_mm['rel'] =  out_mm['abs'] / out_pdp.min(axis=1)
-
     return out_pdp, out_mm
+
+def ice_fixed_location(fixing_well_location, fixing_wells_compl, location_features, feature_name, 
+                        predict, funcs_dict, feature_grid=None, gridNum=40):
+    ''' calculate ice linece for well fixining location 
+    returned df  = [completion] x [feature_grid]
+    EXAMPLE of funcs in funcs_dict
+    def get_location_transform(df, alpha=1.05):
+        # changes df in place !!
+        # alpha = (MD-Perf_interval)/TVD'
+        df['MD_FT'] = df['PerfInterval_FT']+alpha*df['TVD_FT']
+    
+    def data_transformer_from_feature(feature_name):    
+        if feature_name=='FluidIntensity_BBLPerFT':
+            def data_transformer(df):
+                # change in place
+                df['TotalFluidPumped_BBL'] = df['FluidIntensity_BBLPerFT']*df['PerfInterval_FT']
+                # keep same proppant loading
+                df['ProppantIntensity_LBSPerFT'] = df['FluidIntensity_BBLPerFT']*df['ProppantLoading_LBSPerGAL']*42
+                df['Proppant_LBS'] = df['ProppantIntensity_LBSPerFT']*df['PerfInterval_FT']
+
+        if feature_name=='ProppantIntensity_LBSPerFT':
+            def data_transformer(df):
+                # change in place
+                df['Proppant_LBS'] = df['ProppantIntensity_LBSPerFT']*df['PerfInterval_FT']
+                # keep same proppant loading
+                df['FluidIntensity_BBLPerFT'] = df['ProppantIntensity_LBSPerFT']/df['ProppantLoading_LBSPerGAL']/42
+                df['TotalFluidPumped_BBL'] =  df['FluidIntensity_BBLPerFT']*df['PerfInterval_FT']
+        return data_transformer '''
+    location_transform, data_transformer = funcs_dict['location_transform'], funcs_dict['data_transformer']
+    data = fixing_wells_compl.copy()
+    # assign all completions same locations
+    for feat in location_features: data[feat] = fixing_well_location[feat].values[0]
+    location_transform(data)
+
+    if feature_grid is None: 
+        minF, maxF = min(fixing_wells_compl[feature_name]), max(fixing_wells_compl[feature_name])
+        feature_grid = np.linspace(minF, maxF, gridNum)
+
+    return ice_lines(data, feature_grid, feature_name, data_transformer, predict)
+
+def cost_lines(data, feature_grid, feature_name, fd, eco):
+    '''calculate cost lines iteating over feture through feature grid
+      EXAMPLE
+    def get_points_cost(points, eco):
+        #set cost for  "point": comepltion with fixed features (and location)
+        point_cost = eco['cost_proppant_LB']*points['ProppantIntensity_LBSPerFT']
+        point_cost += (eco['cost_water_BBL']+eco['cost_chemicals_BBL']
+                       +eco['cost_service_BBL'])*points['FluidIntensity_BBLPerFT']
+        point_cost += eco['cost_drilling_FT']*points['MD_FT']/points['PerfInterval_FT']
+        point_cost += eco['cost_completion_FT']
+        return point_cost
+    
+    def get_full_cost(cost_per_ft, points): return  cost_per_ft*points['PerfInterval_FT']'''
+    data_transformer, points_cost, full_cost =  fd['data_transformer'], fd['points_cost'], fd['full_cost']
+    
+    cost_ft_lines = pd.DataFrame(columns=feature_grid, index=data.index)
+    cost_lines = pd.DataFrame(columns=feature_grid, index=data.index)
+
+    # iterate over feature values
+    for feature in feature_grid:
+        points = data.copy()
+        points[feature_name] = feature
+        data_transformer(points)
+        cost_per_ft = points_cost(points, eco)
+        cost_ft_lines[feature] = cost_per_ft
+        cost_lines[feature] = full_cost(cost_per_ft, points)
+
+    return {'$/ft':cost_ft_lines, '$':cost_lines}
+
+def cost_fixed_location(fixing_well_location, fixing_wells_compl, location_features, feature_name, funcs_dict,
+                                        feature_grid=None, gridNum=40, eco=None):
+    ''' calculate cost lines for well fixining location 
+    returned df  = [completion] x [feature_grid]
+    '''
+    location_transform = funcs_dict['location_transform']
+
+    if eco is None:
+        eco ={'cost_drilling_FT': 120., # per total drilled ft
+                'cost_completion_FT': 200., # per laterla ft
+                'cost_water_BBL': 10.0,
+                'cost_chemicals_BBL': 1.0,
+                'cost_proppant_LB': 0.1,
+                'cost_service_BBL': 4.0,
+                'discount_rate': 0.06,
+                'price_BOE': 70.0} # in $ per BOE
+    #========================================
+    data = fixing_wells_compl.copy()
+    # assign all completions same locations
+    for feat in location_features: data[feat] = fixing_well_location[feat].values[0]
+    location_transform(data)
+    if feature_grid is None: 
+        minF, maxF = min(fixing_wells_compl[feature_name]), max(fixing_wells_compl[feature_name])
+        feature_grid = np.linspace(minF, maxF, gridNum)
+    return cost_lines(data, feature_grid, feature_name,  funcs_dict, eco), eco
+
+def economics(costD, ice_lines, eco):
+    cost_ft_lines, cost_lines = costD['$/ft'], costD['$']
+    cost_BOE = 1000*cost_ft_lines/ice_lines # cost/BOE = 1000*  (cost/ft) / (BOE/1000ft)
+    return cost_BOE
+
+#     NPV1y = eco['price_BOE']*fullice_lines/(1.0+eco['discount_rate']) -  fullcost_lines
+#     NPV1yFT = eco['price_BOE']*ice_lines/(1.0+eco['discount_rate'])/1000 - cost_lines
