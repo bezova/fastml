@@ -45,12 +45,12 @@ def scale_vars(df, mapper=None, columns=None, inplace=True):
     if inplace: 
         df[mapper.transformed_names_] = mapper.transform(df)
     return mapper
-
+    
 def encode_cat(df, mapper=None, columns=None, minmax_encoded=False, inplace=True):
     '''maps categorical vars to numbers, returns mapper
     to apply to test data: _ = scale_vars(test, scale_mapper)
-    # direct transform:   mapper.transform(df)
-    # inverse transform: encode_dict = {n[0]: e for n, e in mapper.features}
+     direct transform:   mapper.transform(df)
+     inverse transform: encode_dict = {n[0]: e for n, e in mapper.features}
     encode_dict['RSProppantType'].inverse_transform([0,1,2])
     encode_dict['RSProppantType'].classes_ gives ordered classes list same as in inversetransform
     or if MinMax applyed
@@ -74,8 +74,8 @@ def encode_cat(df, mapper=None, columns=None, minmax_encoded=False, inplace=True
 def train_cat_var_types(df, cat_vars, cont_vars):
     '''assign 'float32' and 'category' types to columns, 
     returns df, dict{col_name: [cat list]}'''
-    for v in cont_vars: df[v] = df[v].astype('float32')   
-    for v in cat_vars:  df[v] = df[v].astype('category').cat.as_ordered()        
+    for v in cont_vars: df[v] = df[v].astype('float32', copy=False)   
+    for v in cat_vars:  df[v] = df[v].astype('category', copy=False).cat.as_ordered()        
     cat_dict = {n: df[n].cat.categories for n in cat_vars}
     # df[n].cat.codes gives codes
     return df, cat_dict
@@ -158,9 +158,7 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
     scales if scale all numerical columns given [scalecols]
     onehote encodses if onehot=True all [cat_vars] or [onehotecols]&[numerial]
     LabelEncodes if labelecodecat=True all still numerial cols. or [encodecols]&[numerical]
-    if minmax_labelencoded=True apply MinMax scaler to LabelEncoded Columns
-    
-    '''
+    if minmax_labelencoded=True apply MinMax scaler to LabelEncoded Columns  '''
     scale_mapper = None
     cat_mapper = None
 

@@ -113,20 +113,22 @@ def draw_rect(ax, b):
     draw_outline(patch, 4)
 
 def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, xlabel=None, 
-    ylabel='annual boe/1000ft', title='Completion Impact'):
+    ylabel='annual boe/1000ft', title='Completion Impact', quantile=True):
+    '''plot median line with 25, 75% quintiles [default] or mean with +-std'''
     if ax is None: fig, ax = plt.subplots(figsize=(12,7))
     if smooth: lowess = sm.nonparametric.lowess
     for api, ice in wells_ice.items():
         if zero_start: ice = ice.sub(ice.iloc[:,0], axis=0)
-        ice_std = ice.std()
-        ice_pdp = ice.mean()
+        describe = ice.describe()    # gives mean std and quintile values    
+        ice_pdp = describe.loc['50%'] if quantile else describe.loc['mean']
+        ice_upper =  describe.loc['75%'] if quantile else describe.loc['mean'] + describe.loc['std']
+        ice_lower =  describe.loc['25%'] if quantile else describe.loc['mean'] - describe.loc['std']
         if smooth: 
-            ice_pdp = lowess(ice_pdp.values, np.array(ice.columns), frac=frac,  return_sorted=False)
-            ice_std = lowess(ice_std.values, np.array(ice.columns), frac=frac,  return_sorted=False)
-        upper = ice_pdp + ice_std
-        lower = ice_pdp - ice_std
+            pdp = lowess(ice_pdp.values, np.array(ice.columns), frac=frac,  return_sorted=False)
+            upper = lowess(ice_upper.values, np.array(ice.columns), frac=frac,  return_sorted=False)
+            lower = lowess(ice_lower.values, np.array(ice.columns), frac=frac,  return_sorted=False)
         ax.fill_between(ice.columns, upper, lower, alpha=0.2)#, color='r')
-        ax.plot(ice.columns, ice_pdp, label=api)
+        ax.plot(ice.columns, pdp, label=api)
     ax.legend(loc='upper left')
     ax.set(xlabel=xlabel, ylabel=ylabel)
     ax.set_title(title, fontsize=14)

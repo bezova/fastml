@@ -67,13 +67,35 @@ def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['U
 
 def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longitude_Mid']):
     '''condition on df by geographycal fence
-    gf={'lon':(-98, -97.73), 'lat': (28.83, 29.19)}
-    '''
+    gf={'lon':(-98, -97.73), 'lat': (28.83, 29.19)} '''
     gflat, gflon = gflatlon
     datlat, datlon = datalatlon
     cond = (df[datlat]>gf[gflat][0])&(df[datlat]<gf[gflat][1])&(df[datlon]>gf[gflon][0])&(df[datlon]<gf[gflon][1])
     return cond
 
+def select_by_distance(ref, df, R_mile, square=True, latlon=['Latitude_Mid', 'Longitude_Mid']):   
+    ''' select wells from df within ceartain square a=2R or radius R around of reference well  '''
+    def ft_to_rad(ft):
+        # convert distance in ft to radians
+        kms_per_radian = 6371.0088 # mean earth radius >  https://en.wikipedia.org/wiki/Earth_radius
+        ft_in_meters = 0.3048
+        meter_in_km = 1000.
+        return ft*ft_in_meters/meter_in_km/kms_per_radian
+    def mile_to_deg(mile):
+        # convert distance in mile to radian on earth Lat long 
+        FT_PER_MILE = 5280.
+        return np.degrees(ft_to_rad(mile*FT_PER_MILE))
+
+    lat, lon = latlon
+    latR, lonR = ref[latlon].values
+    theta_deg = mile_to_deg(R_mile)
+    if square: 
+        condition  = ((df[lat]-latR).abs()<=theta_deg) & ((df[lon]-lonR).abs()<=theta_deg)
+    else: 
+        condition  =((df[lat]-latR)**2 +(df[lon]-lonR)**2) <= (theta_deg**2)
+    return df[condition].copy()
+
+    
 def raname_dict(dictionary, category, orig, new):
     '''rename category value in dictionary'''
     catDict = copy.deepcopy(dictionary)
