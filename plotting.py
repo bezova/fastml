@@ -122,6 +122,9 @@ def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, x
         ice_pdp = describe.loc['50%'] if quantile else describe.loc['mean']
         ice_upper =  describe.loc['75%'] if quantile else describe.loc['mean'] + describe.loc['std']
         ice_lower =  describe.loc['25%'] if quantile else describe.loc['mean'] - describe.loc['std']
+        upper = ice_upper.values
+        lower = ice_lower.values
+        pdp = ice_pdp.values
         if smooth: 
             pdp = lowess(ice_pdp.values, np.array(ice.columns), frac=frac,  return_sorted=False)
             if addStd:
@@ -193,7 +196,8 @@ def plot_ice_by_continues(iceLines, completions, category, nLines=1000, point=No
     ax.set(xlabel=xyLabels[0], ylabel=xyLabels[1])
     ax.set_title(title, fontsize=14)
     
-    if point is not None: ax.scatter(point[0], point[1], label=point_label, **argsP)
+    if point is not None: ax.scatter(point[0], point[1], label=point_label,\
+         c=cmap(norm(point[2])), **argsP)
     ax.set(xlabel=xyLabels[0], ylabel=xyLabels[1])
     ax.set_title(title, fontsize=14)
 
