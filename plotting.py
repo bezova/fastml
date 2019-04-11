@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patches, patheffects
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from collections import OrderedDict
-import statsmodels.api as sm
+import statsmodels.api as sm 
 
 def nan_to_mean(arr:np.ndarray, axis:int=0)->np.ndarray:
     '''fills nan with mean over axis .
@@ -58,10 +58,8 @@ def plot_contour_map(xi:np.ndarray, yi:np.ndarray, zi:np.ndarray, mask:Optional=
     cs = ax.contourf(xi ,yi, zi, n_conturs, vmin=vmin, vmax=vmax, antialiased=True, **argsf)
     ax.contour(xi, yi, zi, n_conturs, linewidths=0.5, colors='k', antialiased=True, **args) #add vm
     ax.set_aspect(1)
-    if addColorbar: 
-        cbar =colorbar(cs, label=colorbarLabel)
-        return fig, ax, cbar
-    return fig, ax
+    cbar =colorbar(cs, label=colorbarLabel) if addColorbar else None
+    return fig, ax, cbar
 
 def mask_by_dist(df, col, xi, yi, radius=0.3, lon_lat_names:List[str]=['Longitude_Mid', 'Latitude_Mid']):
     nx, ny = len(xi), len(yi)
@@ -113,9 +111,10 @@ def draw_rect(ax, b):
     draw_outline(patch, 4)
 
 def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, xlabel=None, 
-    ylabel='annual boe/1000ft', title='Completion Impact', quantile=True):
+    ylabel='annual boe/1000ft', title='Completion Impact', quantile=True, addStd=True,
+    addLegend=True, argF={'alpha':0.2}, argPDP={}, figsize=(12,7)):
     '''plot median line with 25, 75% quintiles [default] or mean with +-std'''
-    if ax is None: fig, ax = plt.subplots(figsize=(12,7))
+    if ax is None: fig, ax = plt.subplots(figsize=figsize)
     if smooth: lowess = sm.nonparametric.lowess
     for api, ice in wells_ice.items():
         if zero_start: ice = ice.sub(ice.iloc[:,0], axis=0)
@@ -125,11 +124,12 @@ def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, x
         ice_lower =  describe.loc['25%'] if quantile else describe.loc['mean'] - describe.loc['std']
         if smooth: 
             pdp = lowess(ice_pdp.values, np.array(ice.columns), frac=frac,  return_sorted=False)
-            upper = lowess(ice_upper.values, np.array(ice.columns), frac=frac,  return_sorted=False)
-            lower = lowess(ice_lower.values, np.array(ice.columns), frac=frac,  return_sorted=False)
-        ax.fill_between(ice.columns, upper, lower, alpha=0.2)#, color='r')
-        ax.plot(ice.columns, pdp, label=api)
-    ax.legend(loc='upper left')
+            if addStd:
+                upper = lowess(ice_upper.values, np.array(ice.columns), frac=frac,  return_sorted=False)
+                lower = lowess(ice_lower.values, np.array(ice.columns), frac=frac,  return_sorted=False)
+        if addStd: ax.fill_between(ice.columns, upper, lower, **argF)#, color='r')
+        ax.plot(ice.columns, pdp, label=api, **argPDP)
+    if addLegend: ax.legend(loc='upper left')
     ax.set(xlabel=xlabel, ylabel=ylabel)
     ax.set_title(title, fontsize=14)
     return ax
@@ -170,22 +170,25 @@ def plot_ice_by_category(iceLines, completions, category, cat_dict=None, point=N
 
 def plot_ice_by_continues(iceLines, completions, category, nLines=1000, point=None, 
         point_label='', xyLabels=('',''), title='Completion Impact', random_state=42,
-            vminmax=None, figsize=(10,6), ax=None, cmapName='gist_stern'):
+            vminmax=None, figsize=(10,6), ax=None, cmapName='gist_stern',
+            argsP = {'s':80, 'lw':1, 'edgecolors':'k', 'zorder':3},
+            argsL = {'lw':0.2, 'alpha':0.3, 'zorder':1}, smooth=False, frac=0.15):
     if ax is None: fig, ax = plt.subplots(figsize=figsize)
-    argsP = {'s':80, 'lw':1, 'edgecolors':'k', 'zorder':3}
-    cmap=plt.get_cmap(cmapName) #'gist_stern', 'terrain', 'brg'
-    args = {'lw':0.2, 'alpha':0.3, 'zorder':1}
-    
+    if smooth: lowess = sm.nonparametric.lowess
+    cmap=plt.get_cmap(cmapName) #'gist_stern', 'terrain', 'brg' 
+    nLines = min(nLines, iceLines.shape[0])
     iceSample = iceLines.sample(nLines, random_state=random_state)
     # normalize colors
     vmin, vmax = low_high_quantile(completions[category],1./100.) if vminmax is None else vminmax
     norm=plt.Normalize(vmin=vmin,vmax=vmax)
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    scalarm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 
     x = iceSample.columns
     for index, row in iceSample.iterrows():
         factor_ind=completions.loc[index, category]
-        plt.plot(x, row.values, c=cmap(norm(factor_ind)), **args)
+        values = lowess(np.array(row.values), x, frac=frac,  return_sorted=False) if smooth \
+                     else row.values
+        plt.plot(x, values, c=cmap(norm(factor_ind)), **argsL)
 
     ax.set(xlabel=xyLabels[0], ylabel=xyLabels[1])
     ax.set_title(title, fontsize=14)
@@ -207,7 +210,7 @@ def plot_ice_by_continues(iceLines, completions, category, nLines=1000, point=No
     for legobj in handles: legobj.set_linewidth(5.0)
 
     # make up the array of the scalar mappable. Urgh...
-    sm._A = []
-    #     cb=plt.colorbar(sm); cb.set_label(category)
-    cbar =colorbar(sm, ax, label=category)
-    return ax, sm
+    scalarm._A = []
+    #     cb=plt.colorbar(scalarm); cb.set_label(category)
+    cbar =colorbar(scalarm, ax, label=category)
+    return ax, scalarm

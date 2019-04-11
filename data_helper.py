@@ -1,5 +1,6 @@
 import pandas as pd
 from numpy import nan as NaN
+import numpy as np
 from sklearn.neighbors import KNeighborsRegressor
 from typing import List
 import copy

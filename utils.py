@@ -73,7 +73,6 @@ def permutation_importances(rf, X_train, y_train, metric, columns=None):
     for col in columns:
         save = X_train[col].copy()
         X_train[col] = np.random.permutation(X_train[col])
-        #m = metric(rf, X_train, y_train, xgboost=xgboost)
         m = metric(rf, X_train, y_train)
         X_train[col] = save
         imp.append(baseline - m)
@@ -123,7 +122,7 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     ax.plot([0,xy_min*(1-pp)],[0,xy_min*(1-pp)*(1+pp)], ls='--', c='b')
     if ax_names: 
         ax.set_xlabel(ax_names[0]);  ax.set_ylabel(ax_names[1])
-    plt.show()
+    # plt.show()
     return ax
 
 def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict, 
@@ -208,11 +207,20 @@ def pdp_map_iterCompl(fixing_wells_location, fixing_wells_compl, completion_feat
         out[:,:, compl_idx] = ice.values
 
     out_pdp = pd.DataFrame(out.mean(axis=2), columns=feature_grid, index=fixing_wells_location.index)
+    out_med = pd.DataFrame(np.median(out, axis=2), columns=feature_grid, index=fixing_wells_location.index)
     out_mm = fixing_wells_location[latlon]
-    out_mm['abs'] = out_pdp.max(axis=1) - out_pdp.min(axis=1)
-    out_mm['rel'] =  out_mm['abs'] / out_pdp.min(axis=1)
+    out_mm['max_mean'] = out_pdp.max(axis=1)
+    out_mm['min_mean'] = out_pdp.min(axis=1)
+    out_mm['mean_mean'] = out_pdp.mean(axis=1)
+    out_mm['max_median'] = out_med.max(axis=1)
+    out_mm['min_median'] = out_med.min(axis=1)
+    out_mm['median_median'] = out_med.median(axis=1)
+    # for comnpatibility
+    out_mm['abs'] = out_mm['max_mean'] - out_mm['min_mean']
+    out_mm['rel'] = out_mm['abs'] / out_mm['min_mean']
+
     if returnOut: return out
-    else: return out_pdp, out_mm
+    else: return out_pdp, out_med, out_mm
 
 def pdp_map_iterLoc(fixing_wells_location, fixing_wells_compl, location_features, feature_name, 
                     feature_grid, predict, location_transform, data_transformer, 

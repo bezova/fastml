@@ -211,7 +211,7 @@ def prepare_test(df, cat_dict, cont_vars, scale_mapper, onehotecols, cat_mapper,
     return df
 
 def rename_categories_F(target:str, combine:List[str], cat_idx=None):
-    '''function which will rename categories
+    '''returns function which will rename categories
     catIdx is dictionary [cat] -> index'''
     combineLst = combine if cat_idx is None else [cat_idx[cat] for cat in combine]
     targetVal = target if cat_idx is None else cat_idx[target]
@@ -222,7 +222,8 @@ def cat_to_idx(category, cat_dict):
     return {name: idx for idx, name in enumerate(cat_dict[category])}
 
 def rename_cat_df(df, category, target_combine, cat_dict=None):
-    '''rename categories in df[catgory] from [combine] to target'''
+    '''rename categories in df[catgory] from [combine] to target
+    target_combine = (target:str, combine:List)'''
     target, combine = target_combine
     cat_idx = None if cat_dict is None else cat_to_idx(category, cat_dict)
     renameF = rename_categories_F(target, combine, cat_idx)
