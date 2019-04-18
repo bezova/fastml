@@ -33,7 +33,7 @@ red_blue = LinearSegmentedColormap('red_blue', { # #1E88E5 -> #ff0052
               (1.0, 1, 1))
 })
 
-blue_green = LinearSegmentedColormap('red_blue', { # #1E88E5 -> #ff0052
+blue_green = LinearSegmentedColormap('blue_green', { # #1E88E5 -> #ff0052
     'green': ((0.0, 30./255, 30./255),
             (1.0, 255./255, 255./255)),
 
@@ -45,6 +45,21 @@ blue_green = LinearSegmentedColormap('red_blue', { # #1E88E5 -> #ff0052
 
     'alpha': ((0.0, 1, 1),
               (0.5, 0.3, 0.3),
+              (1.0, 1, 1))
+})
+
+blue_green_solid = LinearSegmentedColormap('blue_green_solid', { # #1E88E5 -> #ff0052
+    'green': ((0.0, 30./255, 30./255),
+            (1.0, 255./255, 255./255)),
+
+    'red': ((0.0, 50./255, 50./255),
+              (1.0, 10./255, 10./255)),
+
+    'blue': ((0.0, 229./255, 229./255),
+             (1.0, 87./255, 87./255)),
+
+    'alpha': ((0.0, 1, 1),
+              (0.5, 1, 1),
               (1.0, 1, 1))
 })
 
@@ -145,6 +160,7 @@ def plot_shap_dependence(shapVals_df, df, feature='ProppantIntensity_LBSPerFT',
     ax.set_xlabel(feature_disp, fontsize=14)
     ax.set_ylabel('Feature Impact', fontsize=14)
     ax.set_title(title, fontsize=14)
+    return ax
 
 def nan_to_mean(arr:np.ndarray, axis:int=0)->np.ndarray:
     '''fills nan with mean over axis .
