@@ -4,7 +4,7 @@ from scipy.interpolate import griddata
 from scipy import ndimage
 from typing import List, Tuple, Dict, Optional 
 from sklearn.neighbors import NearestNeighbors
-from data_helper import low_high_quantile
+from .data_helper import low_high_quantile
 from matplotlib import pyplot as plt
 from matplotlib import patches, patheffects
 from mpl_toolkits.axes_grid1 import make_axes_locatable
