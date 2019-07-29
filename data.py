@@ -22,7 +22,7 @@ class Make2D(BaseEstimator, TransformerMixin):
 # cc=MinMaxScaler1D().fit(x)
 # print(cc.transform(x), cc.inverse_transform(cc.transform(x)))
 
-def rename_rare(df, cols=None, thr=0.01, dropna=True, rareNeme='RARE', verbatim=False):
+def rename_rare(df, cols=None, thr=0.01, dropna=True, rareName='RARE', verbatim=False):
     '''IN PLACE modification to df
     rename rare values in categorical cols to "RARE"'''
     if cols is None: cols = df.columns[df.dtypes == "object"]
