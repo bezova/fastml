@@ -35,6 +35,7 @@ def rename_rare(df, cols=None, thr=0.01, dropna=True, rareName='RARE', verbatim=
         d = counts/counts.sum()
         if verbatim and len(d[d<thr])>0: print(f"{col}, ", end="", flush=True)
         df[col] = df[col].apply(lambda x: rareName if d.loc[x] <= thr else x)
+    print('', end='\n')
 
 def scale_vars(df, mapper=None, columns=None, inplace=True):
     '''from fastai.structured.py
