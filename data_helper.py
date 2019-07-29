@@ -47,24 +47,26 @@ def knn_col_by_XY(df, col, cond_to_predict=None, LatLon=['Latitude', 'Longitude'
     _=knn.fit(XY[LatLon], XY[col])
     df.loc[cond_to_predict, col] = knn.predict(df.loc[cond_to_predict,LatLon])
 
-def unknown_to_nan(df:pd.DataFrame, list_to_nan=['UNKNOWN']):
+def unknown_to_nan(df:pd.DataFrame, list_to_nan=['UNKNOWN'], cols=None):
     ''' in Place Operation
-    for categorical collumns rennames certain values ('UNKNOWN'))  -> Nan'''
-    for col in df.columns[df.dtypes == 'object']: 
+    for categorical collumns (among 'cols' if given) rennames certain values ('UNKNOWN'))  -> Nan'''
+    cols = df.columns if cols is None else cols
+    for col in df[cols].columns[df[cols].dtypes == 'object']: 
         for name in list_to_nan:
             df.loc[df[col]==name, col] = NaN
 
-def nan_to_uknown(df:pd.DataFrame, unknownName='UNKNOWN'):
+def nan_to_uknown(df:pd.DataFrame, unknownName='UNKNOWN', cols=None):
     ''' in Place Operation
-    for categorical collumns rennames NaN to unknownName'''
-    for col in df.columns[df.dtypes == 'object']: 
+    for categorical collumns (among 'cols' if given) rennames NaN to unknownName'''
+    cols = df.columns if cols is None else cols
+    for col in df[cols].columns[df[cols].dtypes == 'object']: 
                 df.loc[df[col].isna(), col] = unknownName
 
-def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['UNKNOWN']):
+def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['UNKNOWN'], cols=None):
     ''' IN PLace Opeation
-    rename all unknowns (list_to_nan) and NaN categorical values to same unknownName'''
-    unknown_to_nan(df, list_to_nan)
-    nan_to_uknown(df, unknownName)
+    rename all unknowns (list_to_nan) and NaN categorical values (among 'cols' if given) to same unknownName'''
+    unknown_to_nan(df, list_to_nan, cols)
+    nan_to_uknown(df, unknownName, cols)
 
 def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longitude_Mid']):
     '''condition on df by geographycal fence
