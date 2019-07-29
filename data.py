@@ -22,16 +22,19 @@ class Make2D(BaseEstimator, TransformerMixin):
 # cc=MinMaxScaler1D().fit(x)
 # print(cc.transform(x), cc.inverse_transform(cc.transform(x)))
 
-def rename_rare(df, cols=None, thr=0.01, dropna=True, verbatim=False):
+def rename_rare(df, cols=None, thr=0.01, dropna=True, rareNeme='RARE', verbatim=False):
     '''IN PLACE modification to df
     rename rare values in categorical cols to "RARE"'''
     if cols is None: cols = df.columns[df.dtypes == "object"]
     if verbatim: print('renamed for next columns: ', end="", flush=True)
-    for col in  df[cols].columns[df[cols].dtypes == "object"]: 
+    for col in  df[cols].columns:
+        if df[col].isna().sum()>0: 
+            print(f'ABORT: col:{col} has NaN')
+            return
         counts = df[col].value_counts(dropna=dropna)
         d = counts/counts.sum()
         if verbatim and len(d[d<thr])>0: print(f"{col}, ", end="", flush=True)
-        df[col] = df[col].apply(lambda x: 'RARE' if d.loc[x] <= thr else x)
+        df[col] = df[col].apply(lambda x: rareNeme if d.loc[x] <= thr else x)
 
 def scale_vars(df, mapper=None, columns=None, inplace=True):
     '''from fastai.structured.py
