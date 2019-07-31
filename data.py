@@ -1,5 +1,6 @@
 from sklearn_pandas import DataFrameMapper, gen_features
 from sklearn.preprocessing import LabelEncoder, Imputer, StandardScaler, MinMaxScaler
+from sklearn.model_selection import train_test_split
 import warnings
 from sklearn.exceptions import DataConversionWarning
 from pandas.api.types import is_string_dtype, is_numeric_dtype
@@ -259,3 +260,10 @@ def split_ice_by_categories(ice, fixing_wells_compl, feature_name, category, sub
             icelines[cat] = ice.loc[apiList, ice_columns]
         else: icelines[cat] = ice.loc[apiList]
     return icelines
+
+def train_test_split_may0test(df, test_size=0, shuffle=True, random_state=None):
+    '''same train test split but also supports 0 test->just shuffles'''
+    if test_size==0:
+        if shuffle: return (df.sample(frac=1, random_state=random_state), pd.DataFrame())
+        else: return (df, pd.DataFrame())
+    else: return train_test_split(df, test_size=test_size, shuffle=shuffle, random_state=random_state)
