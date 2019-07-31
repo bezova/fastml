@@ -65,6 +65,7 @@ def encode_cat(df, mapper=None, columns=None, minmax_encoded=False, inplace=True
     warnings.filterwarnings('ignore', category=DataConversionWarning)
     cols = df.columns if columns is None else columns
     cols = [n for n in cols if not is_numeric_dtype(df[n])]
+    if len(cols)==0: return mapper
 
     if mapper is None:
         if minmax_encoded:
@@ -134,13 +135,11 @@ def split_by_val_idx(idxs, *a):
 def val_train_idxs(n, val_pct=0.2, seed=42):
 #def get_cv_idxs(n, cv_idx=0, val_pct=0.2, seed=42):
     """ Get a list of index values for Validation and Traning set from a dataset
-    
     Arguments:
         n : int, Total number of elements in the data set.
         cv_idx : int, starting index [idx_start = cv_idx*int(val_pct*n)] 
         val_pct : (int, float), validation set percentage 
-        seed : seed value for RandomState
-        
+        seed : seed value for RandomState      
     Returns:
         list of indexes val_inx, trn_inx 
     """
@@ -148,6 +147,9 @@ def val_train_idxs(n, val_pct=0.2, seed=42):
     n_val = int(val_pct*n)
     #idx_start = cv_idx*n_val
     idxs = np.random.permutation(n)
+        # np.random.permutation has two differences from np.random.shuffle:
+        # if passed an array, it will return a shuffled copy of the array; np.random.shuffle shuffles the array inplace
+        # if passed an integer, it will return a shuffled range i.e. np.random.shuffle(np.arange(n))
     #return idxs[idx_start:idx_start+n_val], idxs[idx_start+n_val,:]
     val = idxs[:n_val]
     trn = idxs[n_val:]
@@ -264,6 +266,6 @@ def split_ice_by_categories(ice, fixing_wells_compl, feature_name, category, sub
 def train_test_split_may0test(df, test_size=0, shuffle=True, random_state=None):
     '''same train test split but also supports 0 test->just shuffles'''
     if test_size==0:
-        if shuffle: return (df.sample(frac=1, random_state=random_state), pd.DataFrame())
-        else: return (df, pd.DataFrame())
+        if shuffle: return df.sample(frac=1, random_state=random_state), pd.DataFrame()
+        else: return df, pd.DataFrame()
     else: return train_test_split(df, test_size=test_size, shuffle=shuffle, random_state=random_state)
