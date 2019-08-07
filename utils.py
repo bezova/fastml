@@ -143,17 +143,12 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     # plt.show()
     return ax
 
-def plot_error_percentile_exp(y_pred, y_val, figsize=(10,5)):
-    fig, axs = plt.subplots(1,2,figsize=figsize)
+def plot_error_percentile_exp(y_pred, y_val):
     errors = pd.DataFrame(exp_ape(y_pred, yl_val)*100).clip(upper=100)
     errors.rename(columns={targ:'absolute error, %'}, inplace=True)
     errors.sort_values(by='absolute error, %', inplace=True)
     errors['Percentile'] = np.linspace(0,100,len(errors))
-    errors.plot.scatter(x='absolute error, %', y='Percentile', ax=ax[0]);
-
-    err = errors.values.flatten()
-    err.sort()
-    ax[1]
+    ax=errors.plot.scatter(x='absolute error, %', y='Percentile' )
     return ax
 
 def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict, 
