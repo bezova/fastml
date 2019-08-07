@@ -144,8 +144,7 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     return ax
 
 def plot_error_percentile_exp(y_pred, y_val):
-    errors = pd.DataFrame(exp_ape(y_pred, yl_val)*100).clip(upper=100)
-    errors.rename(columns={targ:'absolute error, %'}, inplace=True)
+    errors = pd.DataFrame(exp_ape(y_pred, y_val).values*100, columns=['absolute error, %']).clip(upper=100)
     errors.sort_values(by='absolute error, %', inplace=True)
     errors['Percentile'] = np.linspace(0,100,len(errors))
     ax=errors.plot.scatter(x='absolute error, %', y='Percentile' )
