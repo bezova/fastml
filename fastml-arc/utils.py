@@ -12,25 +12,41 @@ def drop_inf(df):
     '''removes np.inf values'''
     return df.replace([np.inf, -np.inf], np.nan).dropna()
 
-def exp_rmspe(y_pred, targ):
-    targ = np.exp(targ)
-    pct_var = (targ - np.exp(y_pred))/targ
+def rmspe(y_pred, targ):
+    '''root mean square of percent error'''
+    pct_var = (targ - y_pred)/targ
     return np.sqrt((pct_var**2).mean())
 
-def exp_mape(y_pred, targ):
-    targ = np.exp(targ)
-    pct_var = (targ - np.exp(y_pred))/targ
-    return np.abs(pct_var).mean()
+def exp_rmspe(y_pred, targ):
+    '''root mean square of percent error of exp()'''
+    return rmspe(np.exp(y_pred), np.exp(targ))
 
 def mape(y_pred, targ):
+    '''mean absolute percent error'''
     pct_var = (targ - y_pred)/targ
-    return pct_var.abs().mean()
+    return np.abs(pct_var).mean()
 
-def exp_pe(pred, targ):
-    targ  = np.exp(targ)
-    pct_var = (np.exp(pred)-targ)/targ
+def exp_mape(y_pred, targ):
+    '''mean absolute percent error of exp()'''
+    return mape(np.exp(y_pred), np.exp(targ))
+
+def pe(pred, targ):
+    '''percent error'''
+    pct_var = (pred-targ)/targ
     #pct_var = drop_inf(pct_var)
     return pct_var
+
+def exp_pe(pred, targ):
+    '''percent error of exp()'''
+    return pe(np.exp(pred), np.exp(targ))
+
+def ape(pred, targ):
+    '''absolute percent error'''
+    return np.abs(pe(pred, targ))
+
+def exp_ape(pred, targ):
+    '''absolute percent error'''
+    return ape(np.exp(pred), np.exp(targ))
 
 #def metric_r2(rf, xt, yt, xgboost=False):
 def metric_r2(rf, xt, yt):

@@ -21,24 +21,42 @@ def exp_R2(y_pred, y_true):
     '''R^2 (coefficient of determination)
     y->exp(y):  score=1−<(y^−y)^2>/<(y-<y>)^2] '''
     return r2_score(np.exp(y_true), np.exp(y_pred))
-    
-def exp_rmspe(y_pred, targ0):
-    targ = np.exp(targ0)
-    pct_var = (targ - np.exp(y_pred))/targ
+ 
+def rmspe(y_pred, targ):
+    '''root mean square of percent error'''
+    pct_var = (targ - y_pred)/targ
     return np.sqrt((pct_var**2).mean())
 
+def exp_rmspe(y_pred, targ):
+    '''root mean square of percent error of exp()'''
+    return rmspe(np.exp(y_pred), np.exp(targ))
+
 def mape(y_pred, targ):
+    '''mean absolute percent error'''
     pct_var = (targ - y_pred)/targ
     return np.abs(pct_var).mean()
 
-def exp_pe(pred, targ0):
-    targ  = np.exp(targ0)
-    pct_var = (np.exp(pred)-targ)/targ
+def exp_mape(y_pred, targ):
+    '''mean absolute percent error of exp()'''
+    return mape(np.exp(y_pred), np.exp(targ))
+
+def pe(pred, targ):
+    '''percent error'''
+    pct_var = (pred-targ)/targ
     #pct_var = drop_inf(pct_var)
     return pct_var
 
-def exp_mape(y_pred, targ):
-    return np.abs(exp_pe(y_pred, targ)).mean()
+def exp_pe(pred, targ):
+    '''percent error of exp()'''
+    return pe(np.exp(pred), np.exp(targ))
+
+def ape(pred, targ):
+    '''absolute percent error'''
+    return np.abs(pe(pred, targ))
+
+def exp_ape(pred, targ):
+    '''absolute percent error'''
+    return ape(np.exp(pred), np.exp(targ))
 
 def metric_r2(rf, xt, yt):
     '''returns r2_score(yt, yp)'''
@@ -123,6 +141,14 @@ def plot_pred_vs_targ(x, y, figsize=(5,5), ax=None, pp=0.3, ax_names=None):
     if ax_names: 
         ax.set_xlabel(ax_names[0]);  ax.set_ylabel(ax_names[1])
     # plt.show()
+    return ax
+
+def plot_error_percentile_exp(y_pred, y_val):
+    errors = pd.DataFrame(exp_ape(y_pred, yl_val)*100).clip(upper=100)
+    errors.rename(columns={targ:'absolute error, %'}, inplace=True)
+    errors.sort_values(by='absolute error, %', inplace=True)
+    errors['Percentile'] = np.linspace(0,100,len(errors))
+    ax=errors.plot.scatter(x='absolute error, %', y='Percentile' )
     return ax
 
 def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict, 
