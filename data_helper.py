@@ -1,7 +1,7 @@
 import pandas as pd
 from numpy import nan as NaN
 import numpy as np
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from typing import List
 import copy
 # disable pandas chain assignment warning
@@ -43,7 +43,8 @@ def knn_col_by_XY(df, col, cond_to_predict=None, LatLon=['Latitude', 'Longitude'
     if len(df[cond_to_predict])==0: return None
     XY = df.loc[~cond_to_predict, LatLon+[col]]
     if len(XY)==0: return None
-    knn = KNeighborsRegressor(2, weights='distance')
+    if df[col].dtype=='object': knn = KNeighborsClassifier(2, weights='distance')
+    else: knn = KNeighborsRegressor(2, weights='distance')
     _=knn.fit(XY[LatLon], XY[col])
     df.loc[cond_to_predict, col] = knn.predict(df.loc[cond_to_predict,LatLon])
 
@@ -98,7 +99,6 @@ def select_by_distance(ref, df, R_mile, square=True, latlon=['Latitude_Mid', 'Lo
         condition  =((df[lat]-latR)**2 +(df[lon]-lonR)**2) <= (theta_deg**2)
     return df[condition].copy()
 
-    
 def raname_dict(dictionary, category, orig, new):
     '''rename category value in dictionary'''
     catDict = copy.deepcopy(dictionary)
