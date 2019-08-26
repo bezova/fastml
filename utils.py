@@ -8,6 +8,25 @@ from sklearn.exceptions import DataConversionWarning
 #import xgboost as xgb
 pd.options.mode.chained_assignment = None  # default='warn'
 
+from collections.abc import Iterable
+from functools import partial, update_wrapper
+
+def partial_w(func, *args, **kwargs):
+    '''partial functoins  with correct dict, name, doc'''
+    part = partial(func, *args, **kwargs)
+    update_wrapper(part, func)
+    return part
+
+def listify(p=None):
+    "Make `p` listy"
+    if p is None: p=[]
+    elif isinstance(p, str):          p = [p]
+    elif not isinstance(p, Iterable): p = [p]
+    else:
+        try: a = len(p)
+        except: p = [p]
+    return list(p)
+
 def drop_inf(df):
     '''removes np.inf values'''
     return df.replace([np.inf, -np.inf], np.nan).dropna()
