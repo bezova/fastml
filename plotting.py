@@ -282,7 +282,7 @@ def plot_pdp_std(wells_ice, smooth=True, zero_start=False, frac=0.15, ax=None, x
                 upper = lowess(ice_upper.values, np.array(ice.columns), frac=frac,  return_sorted=False)
                 lower = lowess(ice_lower.values, np.array(ice.columns), frac=frac,  return_sorted=False)
         if addStd: ax.fill_between(ice.columns, upper, lower, **argF)#, color='r')
-        ax.plot(ice.columns, pdp, label=api, **argPDP)
+        ax.plot(list(ice.columns), pdp, label=api, **argPDP)
     if addLegend: ax.legend(loc='upper left')
     ax.set(xlabel=xlabel, ylabel=ylabel)
     ax.set_title(title, fontsize=14)
