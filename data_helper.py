@@ -20,7 +20,7 @@ def nan_quantile(df:pd.DataFrame, col:str, low:float, high=None):
     modyfies df with quantiles set to nan (low, high) for col
     quantiles '''
     bottom, top = low_high_quantile(df[col], low, high)
-    df.loc[(df[col]>=top)|(df[col]<=bottom), col] = NaN
+    df.loc[(df[col]>top)|(df[col]<bottom), col] = NaN
 
 def nan_quantile_ref(df:pd.DataFrame, df_ref:pd.DataFrame, col:str, low:float, high=None):
     '''  In PLACE operation
