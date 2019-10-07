@@ -159,7 +159,7 @@ def prepare_trn(df, cat_vars, cont_vars, sample_size=None,
                 scale=True, scalecols=None,
                 onehot=False, onehotecols=None, 
                 labelencode=True, encodecols=None,
-                minmax_encoded=False):
+                minmax_encoded=False, **argkvds):
     '''
     assigns categorical and numerical columns by cat_vars, cont_vars
     scales if scale all numerical columns given [scalecols]
@@ -228,6 +228,10 @@ def cat_to_idx(category, cat_dict):
     '''inverse category encoding dict, returns dict(category->index)'''
     return {name: idx for idx, name in enumerate(cat_dict[category])}
 
+def set_cat_columns(df, cols):
+    '''change IN PLACE:set columns to catgory'''
+    for col in cols: df[col] = df[col].astype('category', copy=False)
+    
 def rename_cat_df(df, category, target_combine, cat_dict=None):
     '''rename categories in df[catgory] from [combine] to target
     target_combine = (target:str, combine:List)'''

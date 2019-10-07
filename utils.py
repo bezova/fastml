@@ -17,14 +17,29 @@ def partial_w(func, *args, **kwargs):
     update_wrapper(part, func)
     return part
 
-def listify(p=None):
-    "Make `p` listy"
+# def listify(p=None):
+#     "Make `p` listy"
+#     if p is None: p=[]
+#     elif isinstance(p, str):          p = [p]
+#     elif not isinstance(p, Iterable): p = [p]
+#     else:
+#         try: a = len(p)
+#         except: p = [p]
+#     return list(p)
+
+# def listify(p:OptListOrItem=None, q:OptListOrItem=None):
+def listify(p=None, q=None):
+    "Make `p` listy and the same length as `q`."
     if p is None: p=[]
     elif isinstance(p, str):          p = [p]
     elif not isinstance(p, Iterable): p = [p]
+    #Rank 0 tensors in PyTorch are Iterable but don't have a length.
     else:
         try: a = len(p)
         except: p = [p]
+    n = q if type(q)==int else len(p) if q is None else len(q)
+    if len(p)==1: p = p * n
+    assert len(p)==n, f'List len mismatch ({len(p)} vs {n})'
     return list(p)
 
 def drop_inf(df):
