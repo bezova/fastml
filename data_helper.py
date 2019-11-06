@@ -63,11 +63,11 @@ def nan_to_uknown(df:pd.DataFrame, unknownName='UNKNOWN', cols=None):
     for col in df[cols].columns[df[cols].dtypes == 'object']: 
                 df.loc[df[col].isna(), col] = unknownName
 
-def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['UNKNOWN'], cols=None):
+def unknowns_to_sameName(df:pd.DataFrame, unknownName='UNKNOWN', list_to_nan=['UNKNOWN'], cols=None, keepNAN=False):
     ''' IN PLace Opeation
     rename all unknowns (list_to_nan) and NaN categorical values (among 'cols' if given) to same unknownName'''
     unknown_to_nan(df, list_to_nan, cols)
-    nan_to_uknown(df, unknownName, cols)
+    if not keepNAN: nan_to_uknown(df, unknownName, cols)
 
 def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longitude_Mid']):
     '''condition on df by geographycal fence
