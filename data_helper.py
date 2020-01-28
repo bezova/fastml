@@ -2,32 +2,34 @@ import pandas as pd
 from numpy import nan as NaN
 import numpy as np
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from typing import List
+from typing import List, Union
 import copy
 # disable pandas chain assignment warning
 pd.options.mode.chained_assignment = None  # default='warn'
 # discussion here
 # https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
 
-def low_high_quantile(ser:pd.Series, low:float, high=None)->List[float]:
+def low_high_quantile(ser:pd.Series, low:float=None, high:float=None)->List[float]:
     ''' returns values for quantiles
     symmetric if High is omitted'''
-    if high is None: high = 1-low
+    low = low if low else 0.
+    high = high if high else 1.
+    # if high is None: high = 1.-low
     return ser.quantile(low), ser.quantile(high)
-
-def nan_quantile(df:pd.DataFrame, col:str, low:float, high=None):
-    '''  In PLACE operation
-    modyfies df with quantiles set to nan (low, high) for col
-    quantiles '''
-    bottom, top = low_high_quantile(df[col], low, high)
-    df.loc[(df[col]>top)|(df[col]<bottom), col] = NaN
 
 def nan_quantile_ref(df:pd.DataFrame, df_ref:pd.DataFrame, col:str, low:float, high=None):
     '''  In PLACE operation
     modyfies df with quantiles set to nan (low, high) for col
     quantiles calculated from refereced df_ref '''
     bottom, top = low_high_quantile(df_ref[col], low, high)
-    df.loc[(df[col]>=top)|(df[col]<=bottom), col] = NaN
+    df.loc[(df[col]>top)|(df[col]<bottom), col] = NaN
+
+def nan_quantile(df:pd.DataFrame, col:str, low:float=None, high:float=None):
+    '''  In PLACE operation
+    modyfies df with quantiles set to nan (low, high) for col quantiles '''
+    nan_quantile_ref(df, df, col=col, low=low, high=high) 
+    # bottom, top = low_high_quantile(df[col], low, high)
+    # df.loc[(df[col]>top)|(df[col]<bottom), col] = NaN
 
 def knn_col_by_XY(df, col, cond_to_predict=None, LatLon=['Latitude', 'Longitude']):
     ''' In PLACE operation
