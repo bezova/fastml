@@ -80,27 +80,39 @@ def geo_con(df, gf, gflatlon=['lat', 'lon'], datalatlon=['Latitude_Mid', 'Longit
     return cond
 
 def select_by_distance(ref, df, R_mile, square=True, latlon=['Latitude_Mid', 'Longitude_Mid']):   
-    ''' select wells from df within ceartain square a=2R or radius R around of reference well  '''
-    def ft_to_rad(ft):
-        # convert distance in ft to radians
-        kms_per_radian = 6371.0088 # mean earth radius >  https://en.wikipedia.org/wiki/Earth_radius
-        ft_in_meters = 0.3048
-        meter_in_km = 1000.
-        return ft*ft_in_meters/meter_in_km/kms_per_radian
-    def mile_to_deg(mile):
-        # convert distance in mile to radian on earth Lat long 
-        FT_PER_MILE = 5280.
-        return np.degrees(ft_to_rad(mile*FT_PER_MILE))
-
+    ''' select wells from df within ceartain square a=2R or radius R around of reference well 
+    
+    #     At 38 degrees North latitude, 
+    #     one degree of latitude equals approximately 364,000 ft (69 miles), 
+    #     one minute equals 6068 ft (1.15 miles), one-second equals 101 ft;
+    #     one-degree of longitude equals 288,200 ft (54.6 miles),
+    #     one minute equals 4800 ft (0.91 mile), and one second equals 80 ft.
+    '''
+    # def ft_to_rad(ft):
+    #     # convert distance in ft to radians
+    #     kms_per_radian = 6371.0088 # mean earth radius >  https://en.wikipedia.org/wiki/Earth_radius
+    #     ft_in_meters = 0.3048
+    #     meter_in_km = 1000.
+    #     return ft*ft_in_meters/meter_in_km/kms_per_radian
+    # def mile_to_deg(mile):
+    #     # convert distance in mile to radian on earth Lat long 
+    #     FT_PER_MILE = 5280.
+    #     return np.degrees(ft_to_rad(mile*FT_PER_MILE))
+    milesInLonDeg = 54.6  # at 38 deg North latitude
+    milesInLatDeg = 69.
     lat, lon = latlon
     latR, lonR = ref[latlon].values
-    theta_deg = mile_to_deg(R_mile)
+    # theta_deg = mile_to_deg(R_mile)
+    # if square: 
+    #     condition  = ((df[lat]-latR).abs()<=theta_deg) & ((df[lon]-lonR).abs()<=theta_deg)
+    # else: 
+    #     condition  =((df[lat]-latR)**2 +(df[lon]-lonR)**2) <= (theta_deg**2)
+    # return df[condition].copy()
     if square: 
-        condition  = ((df[lat]-latR).abs()<=theta_deg) & ((df[lon]-lonR).abs()<=theta_deg)
+        condition  = ((df[lat]-latR).abs()*milesInLatDeg<=R_mile) & ((df[lon]-lonR).abs()*milesInLonDeg<=R_mile)
     else: 
-        condition  =((df[lat]-latR)**2 +(df[lon]-lonR)**2) <= (theta_deg**2)
-    return df[condition].copy()
-
+        condition  =(((df[lat]-latR)*milesInLatDeg)**2 +((df[lon]-lonR)*milesInLonDeg)**2) < (R_mile**2)
+    return df[condition]
 def raname_dict(dictionary, category, orig, new):
     '''rename category value in dictionary'''
     catDict = copy.deepcopy(dictionary)
