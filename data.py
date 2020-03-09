@@ -1,5 +1,5 @@
 from sklearn_pandas import DataFrameMapper, gen_features
-from sklearn.preprocessing import LabelEncoder, Imputer, StandardScaler, MinMaxScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 import warnings
 from sklearn.exceptions import DataConversionWarning

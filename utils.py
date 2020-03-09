@@ -192,7 +192,7 @@ def calc_potential(datain:pd.DataFrame, fixing_wells_compl:pd.DataFrame, predict
     calculated predict(result), returns df[[latLon], ..comp_api...., mean] ##df[[latLon], ..comp_api...., mean]
 
     EXAMPLE
-    location_features= ['Longitude_Mid', 'Latitude_Mid', 'TVD_FT', '12MonthOilRatio', 'Elevation_FT', 'OilGravity_API', 'WellPadDirection', 'RSSubPlay', 'RSInterval' ,'Formation']
+    location_features= ['Longitude_Mid', 'Latitude_Mid', 'TVD_FT', 'Elevation_FT', 'OilGravity_API', 'WellPadDirection', 'RSSubPlay', 'RSInterval' ,'Formation']
     completion_features =['FluidIntensity_BBLPerFT',  'ProppantIntensity_LBSPerFT', 'ProppantLoading_LBSPerGAL', 'Proppant_LBS', 'RSFracJobType',
                      'RSProdWellType',  'RSProppantType', 'TotalFluidPumped_BBL', 'MD_FT', 'PerfInterval_FT', 'FirstProdYear', 'RSOperator']
   
